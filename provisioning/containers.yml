@@ -1,0 +1,15 @@
+---
+- name: Build Docker images from Dockerfiles.
+  docker_image:
+    name: "{{ item.name }}"
+    tag: "{{ item.tag }}"
+    source: build
+    build:
+      path: "/vagrant/provisioning/{{ item.directory }}"
+      pull: false
+    state: present
+  with_items:
+    - { name: redis, tag: latest, directory: redis }
+    - { name: rabbitmq, tag: latest, directory: rabbitmq }
+    - { name: mysql, tag: latest, directory: mysql }
+

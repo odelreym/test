@@ -1,0 +1,43 @@
+---
+- name: Creates directory for redis
+  file:
+    path: /data/redis/master
+    state: directory
+    owner: root
+    group: root
+    mode: 0775
+
+- name: Creates directory for redis
+  file:
+    path: /data/redis/slave
+    state: directory
+    owner: root
+    group: root
+    mode: 0775
+
+- name: Create redis network
+  docker_network:
+    name: redis-network
+
+- name: Start redis-master 
+  docker_container:
+    name: redis-master
+    image: redis:latest
+    command: redis-server --port 6379 --appendonly yes
+    networks:
+      - name: redis-network
+    ports:
+      - "6379:6379"
+    volumes:
+      - /data/redis/master:/data
+
+- name: Start redis-slave
+  docker_container:
+    name: redis-slave
+    image: redis:latest
+    command: redis-server --slaveof redis-master 6379
+    networks:
+      - name: redis-network
+    volumes:
+     - /data/redis/slave:/data
+

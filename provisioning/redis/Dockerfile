@@ -1,0 +1,3 @@
+FROM redis
+
+LABEL XXX YYY

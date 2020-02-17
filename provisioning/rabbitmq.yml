@@ -1,0 +1,70 @@
+---
+- name: Creates directory for rabbitmq master
+  file:
+    path: /data/rabbitmq/master
+    state: directory
+    owner: root
+    group: root
+    mode: 0775
+
+- name: Creates directory for rabbitmq slave
+  file:
+    path: /data/rabbitmq/slave
+    state: directory
+    owner: root
+    group: root
+    mode: 0775
+
+- name: Create rabbitmq network
+  docker_network:
+    name: rabbitmq-network
+
+- name: Start rabbitmq1
+  docker_container:
+    image: rabbitmq
+    name: rabbitmq-master
+    hostname: rabbitmq-master
+    env:
+      RABBITMQ_ERLANG_COOKIE: "cookie"
+      RABBITMQ_DEFAULT_USER: "{{ rabbitmq_username }}"
+      RABBITMQ_DEFAULT_PASS: "{{ rabbitmq_password }}" 
+    networks:
+      - name: rabbitmq-network
+    ports:
+      - "4369:4369"
+      - "5672:5672"
+      - "15672:15672"
+      - "25672:25672"
+      - "35672:35672"
+    volumes:
+      - /data/rabbitmq/master:/var/lib/rabbitmq
+
+- name: Start rabbitmq2
+  docker_container:
+    image: rabbitmq
+    name: rabbitmq-slave
+    hostname: rabbitmq-slave
+    env:
+      RABBITMQ_ERLANG_COOKIE: "cookie"
+      RABBITMQ_DEFAULT_USER: "{{ rabbitmq_username }}"
+      RABBITMQ_DEFAULT_PASS: "{{ rabbitmq_password }}"
+    networks:
+      - name: rabbitmq-network
+    ports:
+      - "4370:4369"
+      - "5673:5672"
+      - "15673:15672"
+      - "25673:25672"
+      - "35673:35672"
+    volumes:
+      - /data/rabbitmq/slave:/var/lib/rabbitmq
+
+- name: Check if rabbitmq-slave is running
+  wait_for:
+    host: localhost
+    port: 5673
+    delay: 20               # No wait before first check (sec)
+
+- name: Joing rabbitmq2 to the cluster
+  command: docker exec -it rabbitmq-slave /joinmaster.sh rabbitmq-master
+

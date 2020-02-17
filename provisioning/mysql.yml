@@ -1,0 +1,64 @@
+---
+- name: Creates directory for mysql master
+  file:
+    path: /data/mysql/master
+    state: directory
+    owner: root
+    group: root
+    mode: 0775
+
+- name: Creates directory for mysql slave
+  file:
+    path: /data/mysql/slave
+    state: directory
+    owner: root
+    group: root
+    mode: 0775
+
+- name: Create mysql network
+  docker_network:
+    name: mysql-network
+
+- name: Start mysql-master
+  docker_container:
+    image: mysql
+    name: mysql_master
+    hostname: mysql_master
+    env:
+      MYSQL_ROOT_PASSWORD: "mysqlroot"
+      MYSQL_USER: i"example_user"
+      MYSQL_PASSWORD: "mysqlpwd"
+      MYSQL_DATABASE: "example"
+      REPLICATION_USER: "replication_user"
+      REPLICATION_PASSWORD: "myreplpassword"
+    networks:
+      - name: mysql-network
+    ports:
+      - "3306:3306"
+    volumes:
+      - /data/mysql/master:/var/lib/mysql
+
+- name: Wait until master is running
+  wait_for:
+    host: localhost
+    port: 3306
+    delay: 30               # No wait before first check (sec)
+
+- name: Start mysql-slave
+  docker_container:
+    image: mysql
+    name: mysql_slave
+    hostname: mysql_slave
+    env:
+      MYSQL_ROOT_PASSWORD: "mysqlroot"
+      MYSQL_USER: i"example_user"
+      MYSQL_PASSWORD: "mysqlpwd"
+      MYSQL_DATABASE: "example"
+      REPLICATION_USER: "replication_user"
+      REPLICATION_PASSWORD: "myreplpassword"
+      MASTER_HOST: "mysql_master"
+      MASTER_PORT: "3306"
+    networks:
+      - name: mysql-network
+    volumes:
+      - /data/mysql/slave:/var/lib/mysql
