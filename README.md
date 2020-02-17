@@ -36,13 +36,35 @@ Vagrant --> Provision VM --> Execute ansible (main.yml) --> [ build docker conta
 └── requirements.yml
 ```
 
+`main.yml` 
+
+```
+---
+- hosts: all
+  become: true
+
+  pre_tasks:
+    - name: Update apt cache if needed.
+      apt: update_cache=yes cache_valid_time=3600
+
+  roles:
+    - role: geerlingguy.docker
+
+  tasks:
+    - import_tasks: setup.yml          #Install some pip requirements
+    - import_tasks: containers.yml     #playbook for building the containers
+    - import_tasks: redis.yml 
+    - import_tasks: rabbitmq.yml
+    - import_tasks: mysql.yml
+```
+
 ## Getting Started
 
 This README file is inside a folder that contains a `Vagrantfile` (hereafter this folder shall be called the [vagrant_root]), which tells Vagrant how to set up your virtual machine in VirtualBox.
 
 To use the vagrant file, you will need to have done the following:
 
-  1. git clone this repo
+  1. `git clone` this repo
   2. Download and Install [VirtualBox](https://www.virtualbox.org/wiki/Downloads)
   3. Download and Install [Vagrant](https://www.vagrantup.com/downloads.html)
   4. Install [Ansible](http://docs.ansible.com/ansible/latest/intro_installation.html)
@@ -74,6 +96,9 @@ master_port:6379
 ```
 
 RabbitMQ
+
+ credentials are maintained into the Vagrantfile: `ansible.extra_vars`
+
 ```
 root@docker:~# docker exec -it rabbitmq-01 rabbitmqctl cluster_status
 Cluster status of node rabbit@rabbitmq-01 ...
@@ -127,4 +152,13 @@ root@docker:~# tree -d /data/ -L 2
 
 ```
 
-## Author Information
+## Add features/maintenance
+
+You can extend the docker images (or add more functionality) by editing the Dockerfile in every service folder.
+The ansible playbook builds the docker image everytime time is executed
+
+## TODO
+ 
+`wait_for`  ansible control should be fixed. It doesn't work nice in 2.9.5 running in MacOs
+Ports can be forwarded to the host `config.vm.network "forwarded_port"`
+All docker containers are deployed into a single VM. You can provision a VM per service by adapting the Vagranfile and the main.yml playbook
