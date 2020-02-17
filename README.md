@@ -160,5 +160,7 @@ The ansible playbook builds the docker image everytime time is executed
 ## TODO
  
 `wait_for`  ansible control should be fixed. It doesn't work nice in 2.9.5 running in MacOs
+
 Ports can be forwarded to the host `config.vm.network "forwarded_port"`
+
 All docker containers are deployed into a single VM. You can provision a VM per service by adapting the Vagranfile and the main.yml playbook
